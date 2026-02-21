@@ -1,76 +1,109 @@
-<div align="center">
-  <a href="https://www.langchain.com/">
-    <picture>
-      <source media="(prefers-color-scheme: light)" srcset=".github/images/logo-dark.svg">
-      <source media="(prefers-color-scheme: dark)" srcset=".github/images/logo-light.svg">
-      <img alt="LangChain Logo" src=".github/images/logo-dark.svg" width="80%">
-    </picture>
-  </a>
-</div>
+import streamlit as st
+import google.generativeai as genai
+from openai import OpenAI
+import PIL.Image
+import io
 
-<div align="center">
-  <h3>The platform for reliable agents.</h3>
-</div>
+# --- 1. IDENTITY & CONFIG ---
+st.set_page_config(page_title="Tayyab AI Hub", layout="wide")
 
-<div align="center">
-  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/pypi/l/langchain" alt="PyPI - License"></a>
-  <a href="https://pypistats.org/packages/langchain" target="_blank"><img src="https://img.shields.io/pepy/dt/langchain" alt="PyPI - Downloads"></a>
-  <a href="https://pypi.org/project/langchain/#history" target="_blank"><img src="https://img.shields.io/pypi/v/langchain?label=%20" alt="Version"></a>
-  <a href="https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain" target="_blank"><img src="https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode" alt="Open in Dev Containers"></a>
-  <a href="https://codespaces.new/langchain-ai/langchain" target="_blank"><img src="https://github.com/codespaces/badge.svg" alt="Open in Github Codespace" title="Open in Github Codespace" width="150" height="20"></a>
-  <a href="https://codspeed.io/langchain-ai/langchain" target="_blank"><img src="https://img.shields.io/endpoint?url=https://codspeed.io/badge.json" alt="CodSpeed Badge"></a>
-  <a href="https://x.com/langchain" target="_blank"><img src="https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain" alt="Twitter / X"></a>
-</div>
+if "creator" not in st.session_state:
+    st.session_state.creator = "Mr. Tayyab"
+if "theme_color" not in st.session_state:
+    st.session_state.theme_color = "#10a37f" # ChatGPT Green
+if "bg_color" not in st.session_state:
+    st.session_state.bg_color = "#ffffff"
 
-LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations to simplify AI application development – all while future-proofing decisions as the underlying technology evolves.
+# --- 2. CUSTOM CSS (For Admin Customization) ---
+st.markdown(f"""
+    <style>
+    .stApp {{
+        background-color: {st.session_state.bg_color};
+    }}
+    .chat-bubble {{
+        padding: 15px;
+        border-radius: 15px;
+        margin-bottom: 10px;
+        color: black;
+    }}
+    </style>
+    """, unsafe_allow_index=True)
 
-```bash
-pip install langchain
-```
+# --- 3. SIDEBAR (Navigation & Model Selection) ---
+with st.sidebar:
+    st.title("🤖 Tayyab AI Hub")
+    
+    # User Recognition
+    user_name = st.text_input("Enter your name:", placeholder="Who are you?")
+    if user_name.lower() == "mr. tayyab":
+        st.success("Welcome, Boss! Creator mode active.")
+        is_admin = True
+    else:
+        is_admin = False
 
-If you're looking for more advanced customization or agent orchestration, check out [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview), our framework for building controllable agent workflows.
+    st.divider()
+    
+    # API Model Selection
+    model_choice = st.selectbox("Select AI Model", 
+        ["Gemini 2.0 Pro", "Gemini Flash", "ChatGPT-5 (Simulated)", "ChatGPT Mini", "NanoPro (Images)", "VideoGen API"])
 
----
+    # API Keys Section (Users can paste here)
+    with st.expander("🔑 API Settings"):
+        gemini_key = st.text_input("Gemini API Key", type="password")
+        openai_key = st.text_input("OpenAI API Key", type="password")
 
-**Documentation**:
+# --- 4. ADMIN PANEL (Hidden for Others) ---
+if is_admin:
+    with st.expander("🛠️ ADMIN CONTROL PANEL"):
+        st.subheader("Global Customization")
+        st.session_state.theme_color = st.color_picker("Change Theme Color", st.session_state.theme_color)
+        st.session_state.bg_color = st.color_picker("Change Background Color", st.session_state.bg_color)
+        font_size = st.slider("Font Size", 12, 30, 16)
+        st.write("Database Status: Connected to Supabase (Simulated)")
 
-- [docs.langchain.com](https://docs.langchain.com/oss/python/langchain/overview) – Comprehensive documentation, including conceptual overviews and guides
-- [reference.langchain.com/python](https://reference.langchain.com/python) – API reference docs for LangChain packages
-- [Chat LangChain](https://chat.langchain.com/) – Chat with the LangChain documentation and get answers to your questions
+# --- 5. MAIN CHAT INTERFACE ---
+st.header(f"Chat with {model_choice}")
 
-**Discussions**: Visit the [LangChain Forum](https://forum.langchain.com) to connect with the community and share all of your technical questions, ideas, and feedback.
+# File Uploaders (Multimodal)
+uploaded_files = st.file_uploader("Upload Videos, Docs, or Images", accept_multiple_files=True)
 
-> [!NOTE]
-> Looking for the JS/TS library? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-## Why use LangChain?
+# Display Chat History
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-LangChain helps developers build applications powered by LLMs through a standard interface for models, embeddings, vector stores, and more.
+# Chat Input
+if prompt := st.chat_input("Ask Mr. Tayyab's AI anything..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-Use LangChain for:
+    # Logic for API Call (Example: Gemini)
+    with st.chat_message("assistant"):
+        if "Gemini" in model_choice:
+            if not gemini_key:
+                st.error("Please add Gemini API key in Sidebar!")
+            else:
+                try:
+                    genai.configure(api_key=gemini_key)
+                    model = genai.GenerativeModel('gemini-pro')
+                    response = model.generate_content(prompt)
+                    st.write(response.text)
+                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                except Exception as e:
+                    st.error(f"Error: {e}")
+        
+        elif "NanoPro" in model_choice:
+            st.write("Generating high-quality image... (Simulated)")
+            # Simulating an image download button
+            st.button("📥 Download Image")
+            
+        else:
+            st.write(f"Connecting to {model_choice} backend...")
 
-- **Real-time data augmentation**. Easily connect LLMs to diverse data sources and external/internal systems, drawing from LangChain's vast library of integrations with model providers, tools, vector stores, retrievers, and more.
-- **Model interoperability**. Swap models in and out as your engineering team experiments to find the best choice for your application's needs. As the industry frontier evolves, adapt quickly – LangChain's abstractions keep you moving without losing momentum.
-- **Rapid prototyping**. Quickly build and iterate on LLM applications with LangChain's modular, component-based architecture. Test different approaches and workflows without rebuilding from scratch, accelerating your development cycle.
-- **Production-ready features**. Deploy reliable applications with built-in support for monitoring, evaluation, and debugging through integrations like LangSmith. Scale with confidence using battle-tested patterns and best practices.
-- **Vibrant community and ecosystem**. Leverage a rich ecosystem of integrations, templates, and community-contributed components. Benefit from continuous improvements and stay up-to-date with the latest AI developments through an active open-source community.
-- **Flexible abstraction layers**. Work at the level of abstraction that suits your needs - from high-level chains for quick starts to low-level components for fine-grained control. LangChain grows with your application's complexity.
-
-## LangChain ecosystem
-
-While the LangChain framework can be used standalone, it also integrates seamlessly with any LangChain product, giving developers a full suite of tools when building LLM applications.
-
-To improve your LLM application development, pair LangChain with:
-
-- [Deep Agents](https://github.com/langchain-ai/deepagents) *(new!)* – Build agents that can plan, use subagents, and leverage file systems for complex tasks
-- [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview) – Build agents that can reliably handle complex tasks with LangGraph, our low-level agent orchestration framework. LangGraph offers customizable architecture, long-term memory, and human-in-the-loop workflows – and is trusted in production by companies like LinkedIn, Uber, Klarna, and GitLab.
-- [Integrations](https://docs.langchain.com/oss/python/integrations/providers/overview) – List of LangChain integrations, including chat & embedding models, tools & toolkits, and more
-- [LangSmith](https://www.langchain.com/langsmith) – Helpful for agent evals and observability. Debug poor-performing LLM app runs, evaluate agent trajectories, gain visibility in production, and improve performance over time.
-- [LangSmith Deployment](https://docs.langchain.com/langsmith/deployments) – Deploy and scale agents effortlessly with a purpose-built deployment platform for long-running, stateful workflows. Discover, reuse, configure, and share agents across teams – and iterate quickly with visual prototyping in [LangSmith Studio](https://docs.langchain.com/langsmith/studio).
-
-## Additional resources
-
-- [API Reference](https://reference.langchain.com/python) – Detailed reference on navigating base packages and integrations for LangChain.
-- [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview) – Learn how to contribute to LangChain projects and find good first issues.
-- [Code of Conduct](https://github.com/langchain-ai/langchain/?tab=coc-ov-file) – Our community guidelines and standards for participation.
-- [LangChain Academy](https://academy.langchain.com/) – Comprehensive, free courses on LangChain libraries and products, made by the LangChain team.
+# --- 6. FOOTER ---
+st.divider()
+st.caption("Powered by Tayyab AI Hub | SaaS Ready")
